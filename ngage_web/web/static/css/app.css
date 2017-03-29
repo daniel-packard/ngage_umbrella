@@ -1,0 +1,16 @@
+/* This file is for your main application css. */
+
+.event {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: center;
+    font-size: .8em;
+}
+
+.event[hidden] {
+    display: none;
+}
+
+.event .field {
+    flex: 1;
+}
