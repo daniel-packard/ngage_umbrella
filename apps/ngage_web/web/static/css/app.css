@@ -12,10 +12,6 @@
     background: pink;
 }
 
-.event .restore-button {
-    color: green;
-}
-
 .event-feed-container[hidden],
 .event[hidden],
 .spinner[hidden] {

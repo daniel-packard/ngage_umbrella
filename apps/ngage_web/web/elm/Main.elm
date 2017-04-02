@@ -131,7 +131,7 @@ eventItemView n =
                 [ text "contacted: "
                 , input [ class "field", type_ "checkbox", onClick (ToggleContacted n.id), checked n.contacted ] []
                 ]
-            , button [ onClick (SetDismissed n.id True), hidden (n.dismissed) ] [ text "x" ]
+            , button [ onClick (SetDismissed n.id True), hidden (n.dismissed) ] [ text "dismiss" ]
             , button [ class "restore-button", onClick (SetDismissed n.id False), hidden (not n.dismissed) ] [ text "restore" ]
             ]
 
