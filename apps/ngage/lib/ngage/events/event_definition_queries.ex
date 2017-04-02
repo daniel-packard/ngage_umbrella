@@ -3,6 +3,10 @@ defmodule Ngage.EventDefinitionQueries do
 
     alias Ngage.{Repo, EventDefinitions}
 
+    def any do
+        Repo.one(from e in EventDefinitions, select: count(e.id)) != 0    
+    end
+
     def get_all do
         Repo.all(from EventDefinitions)
     end

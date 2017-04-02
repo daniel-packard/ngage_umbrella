@@ -12,7 +12,7 @@ defmodule Ngage.EventDefinitions do
     @required_fields ~w(description)a
     @optional_fields ~w(is_archived)a
 
-    def changeset (event_definition, params \\ %{}) do
+    def changeset(event_definition, params \\ %{}) do
         event_definition
         |> cast(params, @required_fields ++ @optional_fields)
         |> validate_required(@required_fields)

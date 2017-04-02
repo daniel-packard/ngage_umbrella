@@ -7,7 +7,8 @@ defmodule Ngage.Mixfile do
      elixir: "~> 1.4",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     deps: deps()]
+     deps: deps(),
+     aliases: aliases()]
   end
 
   # Configuration for the OTP application
@@ -31,5 +32,9 @@ defmodule Ngage.Mixfile do
   defp deps do
     [{:ecto, "~> 2.1"}, 
      {:postgrex, "~> 0.13.2"}]
+  end
+
+  defp aliases do
+    ["init":  ["ecto.create", "ecto.migrate", "run priv/repo/seed.exs"]]
   end
 end
