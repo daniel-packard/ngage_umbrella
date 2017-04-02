@@ -3,14 +3,58 @@
 .event {
     display: flex;
     flex-wrap: wrap;
-    align-content: center;
+    align-items: center;
     font-size: .8em;
+    padding: 5px 10px;
 }
 
-.event[hidden] {
+.event.dismissed {
+    background: pink;
+}
+
+.event .restore-button {
+    color: green;
+}
+
+.event-feed-container[hidden],
+.event[hidden],
+.spinner[hidden] {
     display: none;
 }
 
 .event .field {
     flex: 1;
+}
+
+.spinner {
+    display: block;
+    box-sizing: border-box;
+    width: 50px;
+    height: 50px;
+    margin: 0 auto;
+    border-radius: 50%;
+    border-top: 8px solid royalblue;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid royalblue;
+    border-left: 8px solid transparent;
+    animation: spin 1.5s infinite ease-in-out;
+    -webkit-animation: spin2 1.5s infinite ease-in-out;
+}
+
+@keyframes spin {
+    from {
+        transform: scale(1) rotate(0deg);
+    }
+    to {
+        transform: scale(1) rotate(180deg);
+    }
+}
+
+@-webkit-keyframes spin2 {
+    from {
+        -webkit-transform: rotate(0deg);
+    }
+    to {
+        -webkit-transform: rotate(180deg);
+    }
 }

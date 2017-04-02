@@ -1,14 +1,14 @@
 module Main exposing (..)
 
+import Components.ListView as ListView
 import Date exposing (Date)
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput, onCheck)
-import Components.ListView as ListView
 
 
--- TYPES
+-- MODEL
 
 
 type alias Event =
@@ -21,32 +21,32 @@ type alias Event =
     }
 
 
-type alias EventDefinition =
-    { username : String
-    , description : String
+type alias Model =
+    { loading : Bool
+    , events : List Event
     }
 
 
+eventDefinitions : Dict.Dict Int String
+eventDefinitions =
+    Dict.fromList
+        [ ( 1, "User Registered" )
+        , ( 2, "User Started Demo" )
+        ]
 
--- MODEL
 
-
-type alias Model =
-    { events : List Event }
+initialEvents : List Event
+initialEvents =
+    [ Event 1 (Date.fromTime 1) "pack3754@gmail.com" 1 False False
+    , Event 2 (Date.fromTime 1) "pack3754@gmail.com" 2 True True
+    , Event 3 (Date.fromTime 1) "pack3754@gmail.com" 3 False False
+    , Event 4 (Date.fromTime 1) "pack3754@gmail.com" 4 False False
+    ]
 
 
 initialModel : Model
 initialModel =
-    let
-        date =
-            Date.fromTime 0
-    in
-        Model
-            [ Event 1 date "pack3754@gmail.com" 1 False False
-            , Event 2 date "pack3754@gmail.com" 2 False False
-            , Event 3 date "pack3754@gmail.com" 3 False False
-            , Event 4 date "pack3754@gmail.com" 4 False False
-            ]
+    Model True initialEvents
 
 
 
@@ -54,11 +54,16 @@ initialModel =
 
 
 type Msg
-    = Dismiss Int
+    = SetDismissed Int Bool
     | ToggleContacted Int
+    | SetLoadingState Bool
     | NoOp
 
 
+toggleEventContacted :
+    List Event
+    -> Int
+    -> List Event
 toggleEventContacted events id =
     let
         mark e =
@@ -70,11 +75,16 @@ toggleEventContacted events id =
         List.map mark events
 
 
-dismissEvent events id =
+setDismissEvent :
+    List Event
+    -> Int
+    -> Bool
+    -> List Event
+setDismissEvent events id dismissed =
     let
         dismiss e =
             if e.id == id then
-                { e | dismissed = True }
+                { e | dismissed = dismissed }
             else
                 e
     in
@@ -84,56 +94,61 @@ dismissEvent events id =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        NoOp ->
-            ( model, Cmd.none )
+        SetLoadingState loadingState ->
+            ( { model | loading = loadingState }, Cmd.none )
 
-        Dismiss id ->
-            ( { model | events = (dismissEvent model.events id) }, Cmd.none )
+        SetDismissed id dismissed ->
+            ( { model | events = (setDismissEvent model.events id dismissed) }, Cmd.none )
 
         ToggleContacted id ->
             ( { model | events = (toggleEventContacted model.events id) }, Cmd.none )
 
+        NoOp ->
+            ( model, Cmd.none )
 
-eventDefinitions : Dict.Dict number String
-eventDefinitions =
-    Dict.fromList
-        [ ( 1, "User Registered" )
-        , ( 2, "User Started Demo" )
-        ]
+
+getEventDescription : Int -> String
+getEventDescription eventDefinitionId =
+    case Dict.get eventDefinitionId eventDefinitions of
+        Just value ->
+            value
+
+        Nothing ->
+            "unknown event (id: " ++ (toString eventDefinitionId) ++ ")"
 
 
 eventItemView : Event -> Html Msg
 eventItemView n =
     let
         eventDescription =
-            case Dict.get n.eventDefinitionId eventDefinitions of
-                Nothing ->
-                    "unknown event (id: " ++ (toString n.eventDefinitionId) ++ ")"
-
-                Just value ->
-                    value
+            getEventDescription n.eventDefinitionId
     in
-        div [ class "event list-group-item", hidden n.dismissed ]
-            [ span [ class "field" ] [ text ("test" ++ (toString n.createdAt)) ]
+        div [ class "event list-group-item", classList [ ( "dismissed", n.dismissed ) ], hidden False ]
+            [ span [ class "field" ] [ text (toString n.createdAt) ]
             , span [ class "field" ] [ text n.username ]
             , span [ class "field" ] [ text eventDescription ]
             , label [ class "field" ]
                 [ text "contacted: "
-                , input [ class "field", type_ "checkbox" ] []
+                , input [ class "field", type_ "checkbox", onClick (ToggleContacted n.id), checked n.contacted ] []
                 ]
-            , button [ onClick (Dismiss n.id) ] [ text "x" ]
+            , button [ onClick (SetDismissed n.id True), hidden (n.dismissed) ] [ text "x" ]
+            , button [ class "restore-button", onClick (SetDismissed n.id False), hidden (not n.dismissed) ] [ text "restore" ]
             ]
 
 
 view : Model -> Html Msg
 view model =
-    div [ class "event-feed-container" ]
-        [ h3 [] [ text "Event feed:" ]
-        , ListView.view { items = model.events, template = Just eventItemView }
-        , h3 [] [ text "Event Definitions" ]
-        , ListView.view { items = Dict.toList eventDefinitions, template = Nothing }
-        , h4 [] [ text "DEBUG: raw event data" ]
-        , ListView.view { items = model.events, template = Nothing }
+    div [ class "content" ]
+        [ button [ onClick (SetLoadingState (not model.loading)) ] [ text "toggle loading" ]
+        , span [ class "spinner", hidden (not model.loading) ] []
+        , div [ class "event-feed-container", hidden model.loading ]
+            [ h3 [] [ text "Event Definitions" ]
+            , ListView.view { items = Dict.toList eventDefinitions, template = Nothing }
+            , h3 [] [ text "Event feed:" ]
+            , ListView.view { items = model.events, template = Just eventItemView }
+            , h4 [] [ text "DEBUG: raw event data" ]
+            , ListView.view { items = model.events, template = Nothing }
+            ]
         ]
 
 

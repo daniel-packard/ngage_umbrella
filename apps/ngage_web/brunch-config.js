@@ -58,6 +58,7 @@ exports.config = {
         },
         elmBrunch: {
             elmFolder: 'web/elm',
+            makeParameters: ['--debug'],
             mainModules: ['Main.elm'],
             outputFolder: '../static/js',
         }
