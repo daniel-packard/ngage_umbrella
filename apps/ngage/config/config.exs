@@ -28,3 +28,11 @@ use Mix.Config
 # here (which is why it is important to import them last).
 #
 #     import_config "#{Mix.env}.exs"
+
+config :ngage, Ngage.Repo,
+    adapter: Ecto.Adapters.Postgres,
+    database: "ngage",
+    username: "postgres",
+    password: "Postgres1234"
+
+config :ngage, ecto_repos: [Ngage.Repo] 

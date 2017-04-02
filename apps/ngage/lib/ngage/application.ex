@@ -12,6 +12,7 @@ defmodule Ngage.Application do
     children = [
       # Starts a worker by calling: Ngage.Worker.start_link(arg1, arg2, arg3)
       # worker(Ngage.Worker, [arg1, arg2, arg3]),
+      worker(Ngage.Repo, [])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
