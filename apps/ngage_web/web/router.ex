@@ -20,7 +20,9 @@ defmodule NgageWeb.Router do
   end
 
   # Other scopes may use custom stacks.
-  # scope "/api", NgageWeb do
-  #   pipe_through :api
-  # end
+  scope "/api/v1", NgageWeb do 
+    pipe_through :api
+
+    get "/event_definitions", EventDefinitionsController, :list
+  end
 end
