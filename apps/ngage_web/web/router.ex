@@ -24,5 +24,6 @@ defmodule NgageWeb.Router do
     pipe_through :api
 
     get "/event_definitions", EventDefinitionsController, :list
+    get "/customers", CustomersController, :list
   end
 end
