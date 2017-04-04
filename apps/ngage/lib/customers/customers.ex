@@ -3,8 +3,8 @@ defmodule Ngage.Customers do
 
     import Ecto.Changeset
 
+    @derive {Poison.Encoder, except: [:__meta__]}
     schema "customers" do
-        has_many :events, Ngage.Events
         field :username, :string
     end
 

@@ -9,6 +9,6 @@ unless (Ngage.CustomerQueries.any) do
 end
 
 unless (Ngage.EventQueries.any) do
-    Ngage.EventQueries.create(Ngage.Events.changeset(%Ngage.Events{}, %{}))
-    Ngage.EventQueries.create(Ngage.Events.changeset(%Ngage.Events{}, %{}))
+    Ngage.EventQueries.create(Ngage.Events.changeset(%Ngage.Events{}, %{customer_id: 1, event_definition_id: 1}))
+    Ngage.EventQueries.create(Ngage.Events.changeset(%Ngage.Events{}, %{customer_id: 2, event_definition_id: 2}))
 end
