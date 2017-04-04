@@ -25,5 +25,6 @@ defmodule NgageWeb.Router do
 
     get "/event_definitions", EventDefinitionsController, :list
     get "/customers", CustomersController, :list
+    get "/events", EventsController, :list
   end
 end

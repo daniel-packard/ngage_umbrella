@@ -1,10 +1,10 @@
-
 defmodule Ngage.EventDefinitions do
     use Ecto.Schema
     
     import Ecto.Changeset
 
     schema "event_definitions" do
+        has_many :events, Ngage.Events
         field :description, :string
         field :is_archived, :boolean
     end

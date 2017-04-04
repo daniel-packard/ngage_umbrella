@@ -4,6 +4,7 @@ defmodule Ngage.Customers do
     import Ecto.Changeset
 
     schema "customers" do
+        has_many :events, Ngage.Events
         field :username, :string
     end
 
