@@ -7,6 +7,33 @@ defmodule NgageWeb.EventsController do
         events = Ngage.EventQueries.get_all()
         |> Enum.map(fn e -> sanitize(e) end)
 
-        json conn, %{events: events}
+        render conn, "index.json", events: events
+    end
+
+    def create(conn, params) do
+        IO.inspect(params)
+        new_event = params["event"]
+        event_definition = Ngage.EventDefinitionQueries.get_by_id(new_event["event_definition_id"])
+        event_definition_id = event_definition.id
+        customer = get_or_create_customer_by_username(new_event["username"])
+        customer_id = customer.id
+
+        new_event = Ngage.EventQueries.create(Ngage.Events.changeset(%Ngage.Events{}, %{event_definition_id: event_definition_id, customer_id: customer_id}))
+
+        result = sanitize(Ngage.EventQueries.get_by_id(new_event.id))
+        json conn, %{event: result}
+    end
+
+
+    def get_or_create_customer_by_username(username) do
+        customer = Ngage.CustomerQueries.get_by_username(username)
+
+        result = case customer do
+          :nil -> Ngage.CustomerQueries.create(Ngage.Customers.changeset(%Ngage.Customers{}, %{username: username}))
+          _ -> customer
+        end
+
+	result |> IO.inspect
+        result
     end
 end

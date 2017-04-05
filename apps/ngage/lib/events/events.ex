@@ -4,7 +4,6 @@ defmodule Ngage.Events do
     
     import Ecto.Changeset
 
-    @derive {Poison.Encoder, except: [:__meta__, :customer]}
     schema "events" do
         belongs_to :customer, Ngage.Customers
         belongs_to :event_definition, Ngage.EventDefinitions

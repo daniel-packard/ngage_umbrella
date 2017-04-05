@@ -15,6 +15,13 @@ defmodule Ngage.CustomerQueries do
         Repo.get(Customers, id)
     end
 
+    def get_by_username(username) do
+        query = from c in Customers,
+            where: c.username == ^username
+
+        Repo.all(query) |> List.first
+    end
+
     def create(customer) do
         Repo.insert!(customer)
     end

@@ -12,7 +12,7 @@ defmodule Ngage.EventQueries do
     end
 
     def get_by_id(id) do
-        Repo.get(Events, id)
+        Repo.get(Events, id) |> Repo.preload(:customer) |> Repo.preload(:event_definition)
     end
 
     def create(event) do
