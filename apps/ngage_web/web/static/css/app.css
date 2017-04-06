@@ -1,5 +1,15 @@
 /* This file is for your main application css. */
 
+.event-feed-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+}
+
+.event-feed-header-item {
+    flex: 1;
+}
+
 .event {
     display: flex;
     flex-wrap: wrap;

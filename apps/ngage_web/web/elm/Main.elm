@@ -1,7 +1,6 @@
 module Main exposing (..)
 
 import Components.ListView as ListView
-import Date exposing (Date)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput, onCheck)
@@ -40,7 +39,7 @@ type alias Event =
 
 type alias Model =
     { loading : Bool
-    , rand : Int
+    , filterDismissedItems : Bool
     , events : List Event
     }
 
@@ -60,7 +59,7 @@ initialEvents =
 
 initialModel : Model
 initialModel =
-    Model True 0 []
+    Model True True []
 
 
 
@@ -71,6 +70,7 @@ type Msg
     = Events (Result Http.Error String)
     | SetDismissed Int Bool
     | ToggleContacted Int
+    | ToggleDismissedItemsFilter
     | SetLoadingState Bool
     | NoOp
 
@@ -134,13 +134,17 @@ update msg model =
         ToggleContacted id ->
             ( { model | events = (toggleEventContacted model.events id) }, Cmd.none )
 
+        ToggleDismissedItemsFilter ->
+            ( { model | filterDismissedItems = not model.filterDismissedItems }, Cmd.none )
+
         NoOp ->
             ( model, Cmd.none )
 
 
 eventItemView : Event -> Html Msg
 eventItemView n =
-    div [ class "event list-group-item", classList [ ( "dismissed", n.dismissed ) ], hidden False ]
+    div
+        [ class "event list-group-item", classList [ ( "dismissed", n.dismissed ) ] ]
         [ span [ class "field" ] [ text (String.slice 0 16 n.createdAt) ]
         , span [ class "field" ] [ text n.username ]
         , span [ class "field" ] [ text n.eventDefinition ]
@@ -158,12 +162,21 @@ view model =
     div [ class "content" ]
         [ span [ class "spinner", hidden (not model.loading) ] []
         , div [ class "event-feed-container", hidden model.loading ]
-            [ h3 [] [ text ("Event Definitions " ++ (toString model.rand)) ]
-            , ListView.view { items = Dict.toList eventDefinitions, template = Nothing }
-            , h3 [] [ text "Event feed:" ]
-            , ListView.view { items = model.events, template = Just eventItemView }
+            [ h3 [] [ text "Event Definitions: " ]
+            , ListView.view { items = Dict.toList eventDefinitions, template = Nothing, filter = (\_ -> True) }
+            , div [ class "event-feed-header" ]
+                [ h3 [ class "event-feed-header-item" ] [ text "Event feed: " ]
+                , small []
+                    [ label
+                        []
+                        [ text "Hide dismissed items: "
+                        , input [ class "field", type_ "checkbox", onClick (ToggleDismissedItemsFilter), checked model.filterDismissedItems ] []
+                        ]
+                    ]
+                ]
+            , ListView.view { items = model.events, template = Just (eventItemView), filter = (\e -> ((not e.dismissed) || (not model.filterDismissedItems))) }
             , h4 [] [ text "DEBUG: raw event data" ]
-            , ListView.view { items = model.events, template = Nothing }
+            , ListView.view { items = model.events, template = Nothing, filter = (\_ -> True) }
             ]
         ]
 
@@ -187,6 +200,7 @@ main =
         }
 
 
+eventsUrl : String
 eventsUrl =
     "http://localhost:4000/api/v1/events"
 

@@ -10,6 +10,7 @@ type alias ItemTemplate a msg =
 
 type alias Model a msg =
     { items : List a
+    , filter : a -> Bool
     , template : Maybe (a -> Html msg)
     }
 
@@ -17,12 +18,15 @@ type alias Model a msg =
 view : Model a msg -> Html msg
 view model =
     let
+        items =
+            List.filter model.filter model.items
+
         itemViews =
             case model.template of
                 Maybe.Nothing ->
-                    List.map (\x -> div [] [ toString x |> text ]) model.items
+                    List.map (\x -> div [] [ toString x |> text ]) items
 
                 Maybe.Just itemTemplate ->
-                    List.map (\i -> div [] [ itemTemplate i ]) model.items
+                    List.map (\i -> div [] [ itemTemplate i ]) items
     in
         div [ class "list-group" ] itemViews
