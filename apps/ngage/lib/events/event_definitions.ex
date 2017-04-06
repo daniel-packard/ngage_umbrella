@@ -3,6 +3,7 @@ defmodule Ngage.EventDefinitions do
     
     import Ecto.Changeset
 
+    @derive {Poison.Encoder, except: [:__meta__]}
     schema "event_definitions" do
         field :description, :string
         field :is_archived, :boolean

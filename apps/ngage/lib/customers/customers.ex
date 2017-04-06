@@ -3,6 +3,7 @@ defmodule Ngage.Customers do
 
     import Ecto.Changeset
 
+    @derive {Poison.Encoder, except: [:__meta__]}
     schema "customers" do
         field :username, :string
     end
