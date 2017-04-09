@@ -203,9 +203,13 @@ view model =
                         ]
                     ]
                 ]
-            , ListView.view { items = model.events, template = Just (eventItemView), filter = (\e -> ((not e.dismissed) || (not model.filterDismissedItems))) }
-            , h4 [] [ text "DEBUG: raw event data" ]
-            , ListView.view { items = model.events, template = Nothing, filter = (\_ -> True) }
+            , div [ class "event-feed" ]
+                [ ListView.view
+                    { items = model.events
+                    , template = Just (eventItemView)
+                    , filter = (\e -> ((not e.dismissed) || (not model.filterDismissedItems)))
+                    }
+                ]
             ]
         ]
 
