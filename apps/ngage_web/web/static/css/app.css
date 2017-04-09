@@ -16,6 +16,7 @@
     align-items: center;
     font-size: .8em;
     padding: 5px 10px;
+    margin-bottom: 5px;
 }
 
 .event.dismissed {

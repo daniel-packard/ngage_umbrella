@@ -19,4 +19,11 @@ defmodule Ngage.EventQueries do
         Repo.insert!(event)
     end
 
+    def update(event) do
+        case Repo.update(event) do
+            {:ok, result} -> result
+            {:error, error} -> IO.inspect error
+        end
+    end
+
 end

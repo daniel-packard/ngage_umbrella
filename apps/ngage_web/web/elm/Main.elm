@@ -7,20 +7,32 @@ import Html.Events exposing (onClick, onInput, onCheck)
 import Dict
 import Http
 import Json.Decode as Decode
+import Json.Encode as Encode
 
 
+eventDecoder : Decode.Decoder Event
 eventDecoder =
     Decode.map6 Event
         (Decode.field "id" Decode.int)
         (Decode.field "inserted_at" Decode.string)
         (Decode.at [ "customer", "username" ] Decode.string)
         (Decode.at [ "event_definition", "description" ] Decode.string)
-        (Decode.field "dismissed" Decode.bool)
         (Decode.field "contacted" Decode.bool)
+        (Decode.field "dismissed" Decode.bool)
 
 
+eventsDecoder : Decode.Decoder (List Event)
 eventsDecoder =
     Decode.field "events" (Decode.list eventDecoder)
+
+
+encodeEvent : Event -> Encode.Value
+encodeEvent event =
+    Encode.object
+        [ ( "id", Encode.int event.id )
+        , ( "dismissed", Encode.bool event.dismissed )
+        , ( "contacted", Encode.bool event.contacted )
+        ]
 
 
 
@@ -72,6 +84,7 @@ type Msg
     | ToggleContacted Int
     | ToggleDismissedItemsFilter
     | SetLoadingState Bool
+    | UpdateEvent (Result Http.Error Event)
     | NoOp
 
 
@@ -120,7 +133,11 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Events (Ok json) ->
-            ( { model | events = (parseJsonEvents json), loading = False }, Cmd.none )
+            let
+                updatedEvents =
+                    parseJsonEvents json
+            in
+                ( { model | events = updatedEvents, loading = False }, Cmd.none )
 
         Events (Err error) ->
             ( model, Cmd.none )
@@ -129,13 +146,24 @@ update msg model =
             ( { model | loading = loadingState }, loadData )
 
         SetDismissed id dismissed ->
-            ( { model | events = (setDismissEvent model.events id dismissed) }, Cmd.none )
+            let
+                updatedEvents =
+                    setDismissEvent model.events id dismissed
+            in
+                ( { model | events = updatedEvents }, updateEvent updatedEvents id )
 
         ToggleContacted id ->
-            ( { model | events = (toggleEventContacted model.events id) }, Cmd.none )
+            let
+                updatedEvents =
+                    toggleEventContacted model.events id
+            in
+                ( { model | events = updatedEvents }, updateEvent updatedEvents id )
 
         ToggleDismissedItemsFilter ->
             ( { model | filterDismissedItems = not model.filterDismissedItems }, Cmd.none )
+
+        UpdateEvent result ->
+            ( model, Cmd.none )
 
         NoOp ->
             ( model, Cmd.none )
@@ -145,7 +173,8 @@ eventItemView : Event -> Html Msg
 eventItemView n =
     div
         [ class "event list-group-item", classList [ ( "dismissed", n.dismissed ) ] ]
-        [ span [ class "field" ] [ text (String.slice 0 16 n.createdAt) ]
+        [ span [] [ text ((toString n.id) ++ " -  ") ]
+        , span [ class "field" ] [ text (String.slice 0 16 n.createdAt) ]
         , span [ class "field" ] [ text n.username ]
         , span [ class "field" ] [ text n.eventDefinition ]
         , label [ class "field" ]
@@ -153,7 +182,7 @@ eventItemView n =
             , input [ class "field", type_ "checkbox", onClick (ToggleContacted n.id), checked n.contacted ] []
             ]
         , button [ onClick (SetDismissed n.id True), hidden (n.dismissed) ] [ text "dismiss" ]
-        , button [ class "restore-button", onClick (SetDismissed n.id False), hidden (not n.dismissed) ] [ text "restore" ]
+        , button [ onClick (SetDismissed n.id False), hidden (not n.dismissed) ] [ text "restore" ]
         ]
 
 
@@ -210,3 +239,35 @@ getEvents =
     eventsUrl
         |> Http.getString
         |> Http.send Events
+
+
+updateEvent : List Event -> Int -> Cmd Msg
+updateEvent events id =
+    let
+        event =
+            case (events |> List.filter (\e -> e.id == id) |> List.head) of
+                Just e ->
+                    e
+
+                Nothing ->
+                    Event 0 "" "" "" False False
+
+        url =
+            "http://localhost:4000/api/v1/events/" ++ (toString id)
+
+        body =
+            encodeEvent event
+                |> Http.jsonBody
+
+        request =
+            Http.request
+                { method = "PATCH"
+                , headers = []
+                , url = url
+                , body = body
+                , expect = Http.expectJson eventDecoder
+                , timeout = Nothing
+                , withCredentials = False
+                }
+    in
+        Http.send UpdateEvent request

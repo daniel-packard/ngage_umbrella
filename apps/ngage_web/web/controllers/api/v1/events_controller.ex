@@ -11,7 +11,6 @@ defmodule NgageWeb.EventsController do
     end
 
     def create(conn, params) do
-        IO.inspect(params)
         new_event = params["event"]
         event_definition = Ngage.EventDefinitionQueries.get_by_id(new_event["event_definition_id"])
         event_definition_id = event_definition.id
@@ -24,16 +23,23 @@ defmodule NgageWeb.EventsController do
         json conn, %{event: result}
     end
 
+    def update(conn, params) do
+        event_id = params["id"]
+        event = Ngage.EventQueries.get_by_id(event_id)
+
+        updated_event = Ngage.EventQueries.update(Ngage.Events.changeset(event, params))
+
+        json conn, updated_event
+    end
 
     def get_or_create_customer_by_username(username) do
         customer = Ngage.CustomerQueries.get_by_username(username)
 
         result = case customer do
-          :nil -> Ngage.CustomerQueries.create(Ngage.Customers.changeset(%Ngage.Customers{}, %{username: username}))
+          :nil -> Ngage.CustomerQueries.update(Ngage.Customers.changeset(%Ngage.Customers{}, %{username: username}))
           _ -> customer
         end
 
-	result |> IO.inspect
         result
     end
 end
