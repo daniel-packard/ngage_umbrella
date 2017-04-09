@@ -135,7 +135,7 @@ update msg model =
         Events (Ok json) ->
             let
                 updatedEvents =
-                    parseJsonEvents json
+                    parseJsonEvents json |> List.sortBy .id
             in
                 ( { model | events = updatedEvents, loading = False }, Cmd.none )
 

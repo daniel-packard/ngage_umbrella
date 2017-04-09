@@ -36,7 +36,7 @@ defmodule NgageWeb.EventsController do
         customer = Ngage.CustomerQueries.get_by_username(username)
 
         result = case customer do
-          :nil -> Ngage.CustomerQueries.update(Ngage.Customers.changeset(%Ngage.Customers{}, %{username: username}))
+          :nil -> Ngage.CustomerQueries.create(Ngage.Customers.changeset(%Ngage.Customers{}, %{username: username}))
           _ -> customer
         end
 
