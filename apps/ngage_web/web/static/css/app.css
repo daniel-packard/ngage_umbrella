@@ -1,7 +1,7 @@
 /* This file is for your main application css. */
 
 .event-feed {
-    height: 100%;
+    max-height: 350px;
     overflow-y: auto;
 }
 
@@ -9,6 +9,10 @@
     display: flex;
     align-items: baseline;
     justify-content: space-between;
+}
+
+.event-feed-header input {
+    padding-left: 5px;
 }
 
 .event-feed-header-item {

@@ -10,6 +10,13 @@ import Json.Decode as Decode
 import Json.Encode as Encode
 
 
+eventDefinitionDecoder : Decode.Decoder EventDefinition
+eventDefinitionDecoder =
+    Decode.map2 EventDefinition
+        (Decode.field "id" Decode.int)
+        (Decode.field "description" Decode.string)
+
+
 eventDecoder : Decode.Decoder Event
 eventDecoder =
     Decode.map6 Event
@@ -24,6 +31,11 @@ eventDecoder =
 eventsDecoder : Decode.Decoder (List Event)
 eventsDecoder =
     Decode.field "events" (Decode.list eventDecoder)
+
+
+eventDefinitionsDecoder : Decode.Decoder (List EventDefinition)
+eventDefinitionsDecoder =
+    Decode.field "eventDefinitions" (Decode.list eventDefinitionDecoder)
 
 
 encodeEvent : Event -> Encode.Value
@@ -49,11 +61,16 @@ type alias Event =
     }
 
 
+type alias EventDefinition =
+    { id : Int, description : String }
+
+
 type alias Model =
     { loading : Bool
     , filterDismissedItems : Bool
     , searchTerm : String
     , events : List Event
+    , eventDefinitions : List EventDefinition
     }
 
 
@@ -72,7 +89,7 @@ initialEvents =
 
 initialModel : Model
 initialModel =
-    Model True True "" []
+    Model True True "" [] []
 
 
 
@@ -80,7 +97,8 @@ initialModel =
 
 
 type Msg
-    = Events (Result Http.Error String)
+    = EventDefinitions (Result Http.Error String)
+    | Events (Result Http.Error String)
     | SetDismissed Int Bool
     | ToggleContacted Int
     | ToggleDismissedItemsFilter
@@ -121,6 +139,16 @@ setDismissEvent events id dismissed =
         List.map dismiss events
 
 
+parseJsonEventDefinitions : String -> List EventDefinition
+parseJsonEventDefinitions json =
+    case Decode.decodeString eventDefinitionsDecoder json of
+        Ok value ->
+            value
+
+        Err err ->
+            []
+
+
 parseJsonEvents : String -> List Event
 parseJsonEvents json =
     case Decode.decodeString eventsDecoder json of
@@ -134,12 +162,25 @@ parseJsonEvents json =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        EventDefinitions (Ok json) ->
+            let
+                updatedEventDefinitions =
+                    parseJsonEventDefinitions json |> List.sortBy .id
+
+                _ =
+                    Debug.log "success"
+            in
+                ( { model | eventDefinitions = updatedEventDefinitions }, Cmd.none )
+
+        EventDefinitions (Err error) ->
+            ( model, Cmd.none )
+
         Events (Ok json) ->
             let
                 updatedEvents =
                     parseJsonEvents json |> List.sortBy .id
             in
-                ( { model | events = updatedEvents, loading = False }, Cmd.none )
+                ( { model | events = updatedEvents, loading = False }, getEventDefinitions )
 
         Events (Err error) ->
             ( model, Cmd.none )
@@ -211,9 +252,7 @@ view model =
     div [ class "content" ]
         [ span [ class "spinner", hidden (not model.loading) ] []
         , div [ class "event-feed-container", hidden model.loading ]
-            [ h3 [] [ text "Event Definitions: " ]
-            , ListView.view { items = Dict.toList eventDefinitions, template = Nothing }
-            , eventFeedHeader model
+            [ eventFeedHeader model
             , div [ class "event-feed" ]
                 [ ListView.view
                     { items =
@@ -223,6 +262,8 @@ view model =
                     , template = Just (eventItemView)
                     }
                 ]
+            , h3 [] [ text "Event Definitions: " ]
+            , ListView.view { items = model.eventDefinitions, template = Nothing }
             ]
         ]
 
@@ -251,11 +292,23 @@ eventsUrl =
     "http://localhost:4000/api/v1/events"
 
 
+eventDefnitionsUrl : String
+eventDefnitionsUrl =
+    "http://localhost:4000/api/v1/event_definitions"
+
+
 getEvents : Cmd Msg
 getEvents =
     eventsUrl
         |> Http.getString
         |> Http.send Events
+
+
+getEventDefinitions : Cmd Msg
+getEventDefinitions =
+    eventDefnitionsUrl
+        |> Http.getString
+        |> Http.send EventDefinitions
 
 
 updateEvent : List Event -> Int -> Cmd Msg
