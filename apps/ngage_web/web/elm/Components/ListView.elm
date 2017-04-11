@@ -27,6 +27,6 @@ view model =
                     List.map (\x -> div [] [ toString x |> text ]) items
 
                 Maybe.Just itemTemplate ->
-                    List.map (\i -> div [] [ itemTemplate i ]) items
+                    List.map (\i -> itemTemplate i ) items
     in
         div [ class "list-group" ] itemViews

@@ -28,6 +28,14 @@
     background: pink;
 }
 
+.event button {
+    flex: 0.5;
+}
+
+.event .row-label {
+    margin-right: 15px;
+}
+
 .event-feed-container[hidden],
 .event[hidden],
 .spinner[hidden] {

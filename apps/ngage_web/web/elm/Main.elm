@@ -173,7 +173,7 @@ eventItemView : Event -> Html Msg
 eventItemView n =
     div
         [ class "event list-group-item", classList [ ( "dismissed", n.dismissed ) ] ]
-        [ span [] [ text ((toString n.id) ++ " -  ") ]
+        [ span [class "row-label"] [ text (toString n.id) ]
         , span [ class "field" ] [ text (String.slice 0 16 n.createdAt) ]
         , span [ class "field" ] [ text n.username ]
         , span [ class "field" ] [ text n.eventDefinition ]
@@ -235,7 +235,7 @@ main =
 
 eventsUrl : String
 eventsUrl =
-    "http://localhost:4000/api/v1/events"
+    "http://ngage.packard.io/api/v1/events"
 
 
 getEvents : Cmd Msg
@@ -257,7 +257,7 @@ updateEvent events id =
                     Event 0 "" "" "" False False
 
         url =
-            "http://localhost:4000/api/v1/events/" ++ (toString id)
+            "http://ngage.packard.io/api/v1/events/" ++ (toString id)
 
         body =
             encodeEvent event
