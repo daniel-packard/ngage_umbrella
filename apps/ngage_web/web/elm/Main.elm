@@ -52,6 +52,7 @@ type alias Event =
 type alias Model =
     { loading : Bool
     , filterDismissedItems : Bool
+    , searchTerm : String
     , events : List Event
     }
 
@@ -71,7 +72,7 @@ initialEvents =
 
 initialModel : Model
 initialModel =
-    Model True True []
+    Model True True "" []
 
 
 
@@ -85,6 +86,7 @@ type Msg
     | ToggleDismissedItemsFilter
     | SetLoadingState Bool
     | UpdateEvent (Result Http.Error Event)
+    | Search String
     | NoOp
 
 
@@ -165,6 +167,9 @@ update msg model =
         UpdateEvent result ->
             ( model, Cmd.none )
 
+        Search searchTerm ->
+            ( { model | searchTerm = searchTerm }, Cmd.none )
+
         NoOp ->
             ( model, Cmd.none )
 
@@ -173,7 +178,7 @@ eventItemView : Event -> Html Msg
 eventItemView n =
     div
         [ class "event list-group-item", classList [ ( "dismissed", n.dismissed ) ] ]
-        [ span [class "row-label"] [ text (toString n.id) ]
+        [ span [ class "row-label" ] [ text (toString n.id) ]
         , span [ class "field" ] [ text (String.slice 0 16 n.createdAt) ]
         , span [ class "field" ] [ text n.username ]
         , span [ class "field" ] [ text n.eventDefinition ]
@@ -186,28 +191,36 @@ eventItemView n =
         ]
 
 
+eventFeedHeader : Model -> Html Msg
+eventFeedHeader model =
+    div [ class "event-feed-header" ]
+        [ h3 [ class "event-feed-header-item" ] [ text "Event feed: " ]
+        , input [ class "event-feed-header-item", placeholder "search by username", onInput Search ] []
+        , small [ style [ ( "margin-left", "10px" ) ] ]
+            [ label
+                []
+                [ text "Hide dismissed items: "
+                , input [ class "field", type_ "checkbox", onClick (ToggleDismissedItemsFilter), checked model.filterDismissedItems ] []
+                ]
+            ]
+        ]
+
+
 view : Model -> Html Msg
 view model =
     div [ class "content" ]
         [ span [ class "spinner", hidden (not model.loading) ] []
         , div [ class "event-feed-container", hidden model.loading ]
             [ h3 [] [ text "Event Definitions: " ]
-            , ListView.view { items = Dict.toList eventDefinitions, template = Nothing, filter = (\_ -> True) }
-            , div [ class "event-feed-header" ]
-                [ h3 [ class "event-feed-header-item" ] [ text "Event feed: " ]
-                , small []
-                    [ label
-                        []
-                        [ text "Hide dismissed items: "
-                        , input [ class "field", type_ "checkbox", onClick (ToggleDismissedItemsFilter), checked model.filterDismissedItems ] []
-                        ]
-                    ]
-                ]
+            , ListView.view { items = Dict.toList eventDefinitions, template = Nothing }
+            , eventFeedHeader model
             , div [ class "event-feed" ]
                 [ ListView.view
-                    { items = model.events
+                    { items =
+                        model.events
+                            |> List.filter (\e -> String.contains model.searchTerm e.username)
+                            |> List.filter (\e -> ((not e.dismissed) || (not model.filterDismissedItems)))
                     , template = Just (eventItemView)
-                    , filter = (\e -> ((not e.dismissed) || (not model.filterDismissedItems)))
                     }
                 ]
             ]
@@ -235,7 +248,7 @@ main =
 
 eventsUrl : String
 eventsUrl =
-    "http://ngage.packard.io/api/v1/events"
+    "http://localhost:4000/api/v1/events"
 
 
 getEvents : Cmd Msg
@@ -257,7 +270,7 @@ updateEvent events id =
                     Event 0 "" "" "" False False
 
         url =
-            "http://ngage.packard.io/api/v1/events/" ++ (toString id)
+            "http://localhost:4000/api/v1/events/" ++ (toString id)
 
         body =
             encodeEvent event

@@ -7,12 +7,17 @@
 
 .event-feed-header {
     display: flex;
-    align-items: flex-end;
+    align-items: baseline;
     justify-content: space-between;
 }
 
 .event-feed-header-item {
     flex: 1;
+}
+
+.event-feed-header-item h3 {
+    margin-top: 0px;
+    margin-bottom: 10px;
 }
 
 .event {
