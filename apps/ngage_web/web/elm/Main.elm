@@ -1,13 +1,31 @@
 module Main exposing (..)
 
 import Components.ListView as ListView
+import Date exposing (..)
+import Date.Format exposing (format)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput, onCheck)
-import Dict
 import Http
 import Json.Decode as Decode
 import Json.Encode as Encode
+
+
+-- ENCODERS/DECODERS
+
+
+stringToDate : Decode.Decoder Date.Date
+stringToDate =
+    Decode.string
+        |> Decode.andThen
+            (\val ->
+                case Date.fromString val of
+                    Err err ->
+                        Decode.fail err
+
+                    Ok result ->
+                        Decode.succeed result
+            )
 
 
 eventDefinitionDecoder : Decode.Decoder EventDefinition
@@ -21,7 +39,7 @@ eventDecoder : Decode.Decoder Event
 eventDecoder =
     Decode.map6 Event
         (Decode.field "id" Decode.int)
-        (Decode.field "inserted_at" Decode.string)
+        (Decode.field "inserted_at" stringToDate)
         (Decode.at [ "customer", "username" ] Decode.string)
         (Decode.at [ "event_definition", "description" ] Decode.string)
         (Decode.field "contacted" Decode.bool)
@@ -47,13 +65,33 @@ encodeEvent event =
         ]
 
 
+parseJsonEventDefinitions : String -> List EventDefinition
+parseJsonEventDefinitions json =
+    case Decode.decodeString eventDefinitionsDecoder json of
+        Ok value ->
+            value
 
--- MODEL
+        Err err ->
+            []
+
+
+parseJsonEvents : String -> List Event
+parseJsonEvents json =
+    case Decode.decodeString eventsDecoder json of
+        Ok value ->
+            value
+
+        Err err ->
+            []
+
+
+
+-- TYPE ALIASES
 
 
 type alias Event =
     { id : Int
-    , createdAt : String
+    , createdAt : Date
     , username : String
     , eventDefinition : String
     , contacted : Bool
@@ -62,7 +100,13 @@ type alias Event =
 
 
 type alias EventDefinition =
-    { id : Int, description : String }
+    { id : Int
+    , description : String
+    }
+
+
+
+-- MODEL
 
 
 type alias Model =
@@ -72,19 +116,6 @@ type alias Model =
     , events : List Event
     , eventDefinitions : List EventDefinition
     }
-
-
-eventDefinitions : Dict.Dict Int String
-eventDefinitions =
-    Dict.fromList
-        [ ( 1, "User Registered" )
-        , ( 2, "User Started Demo" )
-        ]
-
-
-initialEvents : List Event
-initialEvents =
-    []
 
 
 initialModel : Model
@@ -108,57 +139,6 @@ type Msg
     | NoOp
 
 
-toggleEventContacted :
-    List Event
-    -> Int
-    -> List Event
-toggleEventContacted events id =
-    let
-        mark e =
-            if e.id == id then
-                { e | contacted = (not e.contacted) }
-            else
-                e
-    in
-        List.map mark events
-
-
-setDismissEvent :
-    List Event
-    -> Int
-    -> Bool
-    -> List Event
-setDismissEvent events id dismissed =
-    let
-        dismiss e =
-            if e.id == id then
-                { e | dismissed = dismissed }
-            else
-                e
-    in
-        List.map dismiss events
-
-
-parseJsonEventDefinitions : String -> List EventDefinition
-parseJsonEventDefinitions json =
-    case Decode.decodeString eventDefinitionsDecoder json of
-        Ok value ->
-            value
-
-        Err err ->
-            []
-
-
-parseJsonEvents : String -> List Event
-parseJsonEvents json =
-    case Decode.decodeString eventsDecoder json of
-        Ok value ->
-            value
-
-        Err err ->
-            []
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -178,7 +158,7 @@ update msg model =
         Events (Ok json) ->
             let
                 updatedEvents =
-                    parseJsonEvents json |> List.sortBy .id
+                    parseJsonEvents json |> List.sortBy .id |> List.reverse
             in
                 ( { model | events = updatedEvents, loading = False }, getEventDefinitions )
 
@@ -193,14 +173,14 @@ update msg model =
                 updatedEvents =
                     setDismissEvent model.events id dismissed
             in
-                ( { model | events = updatedEvents }, updateEvent updatedEvents id )
+                ( { model | events = updatedEvents }, patchEventUpdate updatedEvents id )
 
         ToggleContacted id ->
             let
                 updatedEvents =
                     toggleEventContacted model.events id
             in
-                ( { model | events = updatedEvents }, updateEvent updatedEvents id )
+                ( { model | events = updatedEvents }, patchEventUpdate updatedEvents id )
 
         ToggleDismissedItemsFilter ->
             ( { model | filterDismissedItems = not model.filterDismissedItems }, Cmd.none )
@@ -215,21 +195,32 @@ update msg model =
             ( model, Cmd.none )
 
 
-eventItemView : Event -> Html Msg
-eventItemView n =
-    div
-        [ class "event list-group-item", classList [ ( "dismissed", n.dismissed ) ] ]
-        [ span [ class "row-label" ] [ text (toString n.id) ]
-        , span [ class "field" ] [ text (String.slice 0 16 n.createdAt) ]
-        , span [ class "field" ] [ text n.username ]
-        , span [ class "field" ] [ text n.eventDefinition ]
-        , label [ class "field" ]
-            [ text "contacted: "
-            , input [ class "field", type_ "checkbox", onClick (ToggleContacted n.id), checked n.contacted ] []
-            ]
-        , button [ onClick (SetDismissed n.id True), hidden (n.dismissed) ] [ text "dismiss" ]
-        , button [ onClick (SetDismissed n.id False), hidden (not n.dismissed) ] [ text "restore" ]
-        ]
+toggleEventContacted : List Event -> Int -> List Event
+toggleEventContacted events id =
+    let
+        mark e =
+            if e.id == id then
+                { e | contacted = (not e.contacted) }
+            else
+                e
+    in
+        List.map mark events
+
+
+setDismissEvent : List Event -> Int -> Bool -> List Event
+setDismissEvent events id dismissed =
+    let
+        dismiss e =
+            if e.id == id then
+                { e | dismissed = dismissed }
+            else
+                e
+    in
+        List.map dismiss events
+
+
+
+-- VIEWS
 
 
 eventFeedHeader : Model -> Html Msg
@@ -247,6 +238,30 @@ eventFeedHeader model =
         ]
 
 
+eventItemViewTemplate : Event -> Html Msg
+eventItemViewTemplate n =
+    div
+        [ class "event list-group-item", classList [ ( "dismissed", n.dismissed ) ] ]
+        [ span [ class "row-label" ] [ text (toString n.id) ]
+        , span [ class "field" ] [ text (Date.Format.format "%y/%m/%d %I:%M" n.createdAt) ]
+        , span [ class "field" ] [ text n.username ]
+        , span [ class "field" ] [ text n.eventDefinition ]
+        , label [ class "field" ]
+            [ text "contacted: "
+            , input [ class "field", type_ "checkbox", onClick (ToggleContacted n.id), checked n.contacted ] []
+            ]
+        , button [ onClick (SetDismissed n.id True), hidden (n.dismissed) ] [ text "dismiss" ]
+        , button [ onClick (SetDismissed n.id False), hidden (not n.dismissed) ] [ text "restore" ]
+        ]
+
+
+eventsFilter : Model -> List Event -> List Event
+eventsFilter model events =
+    events
+        |> List.filter (\e -> String.contains model.searchTerm e.username)
+        |> List.filter (\e -> ((not e.dismissed) || (not model.filterDismissedItems)))
+
+
 view : Model -> Html Msg
 view model =
     div [ class "content" ]
@@ -254,14 +269,7 @@ view model =
         , div [ class "event-feed-container", hidden model.loading ]
             [ eventFeedHeader model
             , div [ class "event-feed" ]
-                [ ListView.view
-                    { items =
-                        model.events
-                            |> List.filter (\e -> String.contains model.searchTerm e.username)
-                            |> List.filter (\e -> ((not e.dismissed) || (not model.filterDismissedItems)))
-                    , template = Just (eventItemView)
-                    }
-                ]
+                [ ListView.view { items = model.events |> eventsFilter model, template = Just eventItemViewTemplate } ]
             , h3 [] [ text "Event Definitions: " ]
             , ListView.view { items = model.eventDefinitions, template = Nothing }
             ]
@@ -311,8 +319,8 @@ getEventDefinitions =
         |> Http.send EventDefinitions
 
 
-updateEvent : List Event -> Int -> Cmd Msg
-updateEvent events id =
+patchEventUpdate : List Event -> Int -> Cmd Msg
+patchEventUpdate events id =
     let
         event =
             case (events |> List.filter (\e -> e.id == id) |> List.head) of
@@ -320,7 +328,7 @@ updateEvent events id =
                     e
 
                 Nothing ->
-                    Event 0 "" "" "" False False
+                    Event 0 (Date.fromTime 0) "" "" False False
 
         url =
             "http://localhost:4000/api/v1/events/" ++ (toString id)
