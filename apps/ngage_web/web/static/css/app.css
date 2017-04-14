@@ -41,6 +41,12 @@
     flex: 0.5;
 }
 
+.event input {
+    position: relative;
+    top: 3px;
+    left: 2px;
+}
+
 .event .row-label {
     margin-right: 15px;
 }
@@ -70,7 +76,7 @@
     -webkit-animation: spin2 .5s infinite ease-in-out;
 }
 
-@keyframes spin {
+@keyframes spin2 {
     from {
         transform: scale(1) rotate(0deg);
     }
