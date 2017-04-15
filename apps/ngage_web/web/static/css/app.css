@@ -48,7 +48,7 @@ input[type='checkbox'] {
     left: 2px;
 }
 
-.event .row-label {
+.event span {
     margin-right: 15px;
 }
 
@@ -58,8 +58,12 @@ input[type='checkbox'] {
     display: none;
 }
 
-.event .field {
-    flex: 1;
+.event .event-description {
+    flex: 3;
+}
+
+.event .username {
+    flex: 2;
 }
 
 .spinner {

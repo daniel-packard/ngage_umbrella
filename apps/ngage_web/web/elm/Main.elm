@@ -247,12 +247,14 @@ eventItemViewTemplate n =
     div
         [ class "event list-group-item", classList [ ( "dismissed", n.dismissed ) ] ]
         [ span [ class "row-label" ] [ text (toString n.id) ]
-        , span [ class "field" ] [ text (Date.Format.format "%y/%m/%d %I:%M" n.createdAt) ]
-        , span [ class "field" ] [ text n.username ]
-        , span [ class "field" ] [ text n.eventDefinition ]
-        , label [ class "field" ]
-            [ text "contacted: "
-            , input [ class "field", type_ "checkbox", onClick (ToggleContacted n.id), checked n.contacted ] []
+        , span [] [ text (Date.Format.format "%y/%m/%d %H:%M" n.createdAt) ]
+        , span [ class "username" ] [ text n.username ]
+        , span [ class "event-description" ] [ text n.eventDefinition ]
+        , span []
+            [ label []
+                [ text "contacted: "
+                , input [ class "field", type_ "checkbox", onClick (ToggleContacted n.id), checked n.contacted ] []
+                ]
             ]
         , button [ onClick (SetDismissed n.id True), hidden (n.dismissed) ] [ text "dismiss" ]
         , button [ onClick (SetDismissed n.id False), hidden (not n.dismissed) ] [ text "restore" ]
