@@ -223,19 +223,23 @@ setDismissEvent events id dismissed =
 -- VIEWS
 
 
-eventFeedHeader : Model -> Html Msg
-eventFeedHeader model =
-    div [ class "event-feed-header" ]
-        [ h3 [ class "event-feed-header-item" ] [ text "Event feed: " ]
-        , input [ class "event-feed-header-item", placeholder "search by username", onInput Search ] []
-        , small [ style [ ( "margin-left", "10px" ) ] ]
-            [ label
-                []
-                [ text "Hide dismissed items: "
-                , input [ class "field", type_ "checkbox", onClick (ToggleDismissedItemsFilter), checked model.filterDismissedItems ] []
+eventFeedHeader : Int -> Int -> Bool -> Html Msg
+eventFeedHeader visibleEventsCount totalEventsCount hideDismissedEvents =
+    let
+        displayCountText =
+            text ("displaying " ++ (toString visibleEventsCount) ++ " of " ++ (toString totalEventsCount) ++ " events")
+    in
+        div [ class "event-feed-header" ]
+            [ h3 [ class "event-feed-header-item" ] [ text "Event feed: ", small [] [ displayCountText ] ]
+            , input [ class "event-feed-header-item", placeholder "search by username", onInput Search ] []
+            , small [ style [ ( "margin-left", "10px" ) ] ]
+                [ label
+                    []
+                    [ text "Hide dismissed items: "
+                    , input [ class "field", type_ "checkbox", onClick (ToggleDismissedItemsFilter), checked hideDismissedEvents ] []
+                    ]
                 ]
             ]
-        ]
 
 
 eventItemViewTemplate : Event -> Html Msg
@@ -264,16 +268,26 @@ eventsFilter model events =
 
 view : Model -> Html Msg
 view model =
-    div [ class "content" ]
-        [ span [ class "spinner", hidden (not model.loading) ] []
-        , div [ class "event-feed-container", hidden model.loading ]
-            [ eventFeedHeader model
-            , div [ class "event-feed" ]
-                [ ListView.view { items = model.events |> eventsFilter model, template = Just eventItemViewTemplate } ]
-            , h3 [] [ text "Event Definitions: " ]
-            , ListView.view { items = model.eventDefinitions, template = Nothing }
+    let
+        filteredEvents =
+            model.events |> eventsFilter model
+
+        visibleEventsCount =
+            filteredEvents |> List.length
+
+        totalEventsCount =
+            model.events |> List.length
+    in
+        div [ class "content" ]
+            [ span [ class "spinner", hidden (not model.loading) ] []
+            , div [ class "event-feed-container", hidden model.loading ]
+                [ eventFeedHeader visibleEventsCount totalEventsCount model.filterDismissedItems
+                , div [ class "event-feed" ]
+                    [ ListView.view { items = filteredEvents, template = Just eventItemViewTemplate } ]
+                , h3 [] [ text "Event Definitions: " ]
+                , ListView.view { items = model.eventDefinitions, template = Nothing }
+                ]
             ]
-        ]
 
 
 
