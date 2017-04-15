@@ -264,7 +264,7 @@ eventItemViewTemplate n =
 eventsFilter : Model -> List Event -> List Event
 eventsFilter model events =
     events
-        |> List.filter (\e -> String.contains model.searchTerm e.username)
+        |> List.filter (\e -> String.contains (model.searchTerm |> String.toLower) (e.username |> String.toLower))
         |> List.filter (\e -> ((not e.dismissed) || (not model.filterDismissedItems)))
 
 

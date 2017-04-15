@@ -60,6 +60,7 @@ input[type='checkbox'] {
 
 .event .event-description {
     flex: 3;
+    min-width: 150px;
 }
 
 .event .username {
