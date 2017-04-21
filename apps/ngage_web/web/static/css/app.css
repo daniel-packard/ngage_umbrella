@@ -58,6 +58,10 @@ input[type='checkbox'] {
     display: none;
 }
 
+.event .row-label {
+    min-width: 25px;
+}
+
 .event .event-description {
     flex: 3;
     min-width: 150px;
